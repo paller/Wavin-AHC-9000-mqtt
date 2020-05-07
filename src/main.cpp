@@ -4,6 +4,46 @@
 #include "WavinController.h"
 #include "PrivateConfig.h"
 
+/* Define functions for Wavin's serial interface */
+#define IO_PIN 0
+
+void wavin_init(void)
+{
+  digitalWrite(IO_PIN, LOW);
+  pinMode(IO_PIN, OUTPUT);
+
+  Serial.begin(38400);
+  Serial.setTimeout(500);
+  //Serial.swap();
+}
+
+size_t wavin_write(uint8_t *data, uint8_t length)
+{
+  size_t written;
+
+  digitalWrite(IO_PIN, HIGH);
+  written = Serial.write(data, length); 
+  Serial.flush();
+  digitalWrite(IO_PIN, LOW);
+
+  return written;
+}
+
+size_t wavin_read(uint8_t *buffer, uint8_t length)
+{
+  digitalWrite(IO_PIN, LOW);
+
+  return Serial.readBytes(buffer, length);
+}
+
+io_descriptor_wavin wavin_io = {
+  .init = wavin_init,
+  .write = wavin_write,
+  .read = wavin_read,
+};
+
+WavinController wavinController(wavin_io);
+
 // MQTT defines
 // Esp8266 MAC will be added to the device name, to ensure unique topics
 // Default is topics like 'heat/floorXXXXXXXXXXXX/3/target', where 3 is the output id and XXXXXXXXXXXX is the mac
@@ -31,10 +71,11 @@ String mqttClientWithMac;
 // When mode is set to MQTT_VALUE_MODE_STANDBY, the following temperature will be used
 const float STANDBY_TEMPERATURE_DEG = 5.0;
 
+/*
 const uint8_t TX_ENABLE_PIN = 5;
 const bool SWAP_SERIAL_PINS = true;
 const uint16_t RECIEVE_TIMEOUT_MS = 1000;
-WavinController wavinController(TX_ENABLE_PIN, SWAP_SERIAL_PINS, RECIEVE_TIMEOUT_MS);
+*/
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
